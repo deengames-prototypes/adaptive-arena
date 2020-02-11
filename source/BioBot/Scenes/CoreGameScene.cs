@@ -1,37 +1,77 @@
+using System;
 using System.IO;
-using System.Linq;
+using DeenGames.BioBot.Model;
 using Puffin.Core;
-using Puffin.Core.Ecs;
+using Puffin.Core.IO;
 using Puffin.Core.Tiles;
+using Troschuetz.Random.Generators;
 
 namespace DeenGames.BioBot.Scenes
 {
     public class CoreGameScene : Scene
     {
+        private readonly AreaMap map;
+        private readonly TileMap entitiesMap;
+
         public CoreGameScene()
         {
+            // Probably shouldn't go here ...
+            var gameSeed = new Random().Next();
+            Console.WriteLine($"Global seed is {gameSeed}");
+
+            // Testing, testing, 1 2 3 ...
+            this.map = new AreaMap(new StandardGenerator(gameSeed), Constants.MAP_TILES_WIDE, Constants.MAP_TILES_HIGH);
+
+            // Create ground tilemap
             var groundMap = new TileMap(Constants.MAP_TILES_WIDE, Constants.MAP_TILES_HIGH, Path.Combine("Content", "Images", "Tileset.png"), Constants.TILE_WIDTH, Constants.TILE_HEIGHT);
 
             groundMap.Define("Wall", 0, 0, true);
 
-            foreach (var y in Enumerable.Range(0, Constants.MAP_TILES_HIGH))
+            for (var y = 0; y < Constants.MAP_TILES_HIGH; y++)
             {
-                groundMap.Set(0, y, "Wall");
-                groundMap.Set(Constants.MAP_TILES_WIDE - 1, y, "Wall");
+                for (var x = 0; x < Constants.MAP_TILES_WIDE; x++)
+                {
+                    if (map[x, y] == false)
+                    {
+                        groundMap.Set(x, y, "Wall");
+                    }
+                }
             }
-            
-            foreach (var x in Enumerable.Range(0, Constants.MAP_TILES_WIDE))
-            {
-                groundMap.Set(x, 0, "Wall");
-                groundMap.Set(x, Constants.MAP_TILES_HIGH - 1, "Wall");
-            }
-
             this.Add(groundMap);
 
-            var entitiesMap = new TileMap(Constants.MAP_TILES_WIDE, Constants.MAP_TILES_HIGH, Path.Combine("Content", "Images", "Characters.png"), Constants.TILE_WIDTH, Constants.TILE_HEIGHT);
-            entitiesMap.Define("Player", 0, 0);
-            entitiesMap.Set(Constants.DISPLAY_TILES_WIDE / 2, Constants.DISPLAY_TILES_HIGH / 2, "Player");
-            this.Add(entitiesMap);
+            // Create entities tilemap
+            this.entitiesMap = new TileMap(Constants.MAP_TILES_WIDE, Constants.MAP_TILES_HIGH, Path.Combine("Content", "Images", "Characters.png"), Constants.TILE_WIDTH, Constants.TILE_HEIGHT);
+            this.entitiesMap.Define("Player", 0, 0);
+            this.Add(this.entitiesMap);
+
+            this.OnActionPressed = (data) =>
+            {
+                var action = (PuffinAction)data;
+
+                if (action == PuffinAction.Up)
+                {
+                    map.TryToMovePlayer(0, -1);
+                }
+                else if (action == PuffinAction.Down)
+                {
+                    map.TryToMovePlayer(0, 1);
+                }
+                else if (action == PuffinAction.Left)
+                {
+                    map.TryToMovePlayer(-1, 0);
+                }
+                else if (action == PuffinAction.Right)
+                {
+                    map.TryToMovePlayer(1, 0);
+                }
+            };
+        }
+
+        override public void Update(int elapsedMilliseconds)
+        {
+            // clear/redraw all entities, instead of tracking their old locations.
+            this.entitiesMap.Clear();
+            this.entitiesMap.Set(map.PlayerX, map.PlayerY, "Player");
         }
     }
 }
