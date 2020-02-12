@@ -1,5 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using DeenGames.BioBot.Ecs.Components;
+using DeenGames.BioBot.Ecs.Entities;
+using DeenGames.BioBot.Ecs.Systems;
+using DeenGames.BioBot.Events;
 using GoRogue.MapGeneration;
 using GoRogue.MapViews;
 using Troschuetz.Random;
@@ -11,10 +16,9 @@ namespace DeenGames.BioBot.Model
     public class AreaMap
     {
         // TODO: refactor into player
-        internal int PlayerX { get; private set; } = 0;
-        internal int PlayerY { get; private set; } = 0;
-        internal List<Monster> Monsters = new List<Monster>();
-        
+        internal List<Entity> Monsters = new List<Entity>();
+        internal readonly Entity Player;
+
         private const int currentDifficutly = 1000;
         private readonly ArrayMap<bool> isWalkable;
         private readonly int areaNumber = 1; // "floor" number
@@ -25,19 +29,43 @@ namespace DeenGames.BioBot.Model
         private readonly int height = 0;
         
 
-        public AreaMap(IGenerator globalRandom)
+        public AreaMap(IGenerator globalRandom, IEnumerable<AbstractSystem> systems)
         {
             this.globalRandom = globalRandom;
             this.width = Constants.MAP_TILES_WIDE;
             this.height = Constants.MAP_TILES_HIGH;
             this.isWalkable = new ArrayMap<bool>(Constants.MAP_TILES_WIDE, Constants.MAP_TILES_HIGH);
 
+            this.Player = new Entity("Player", 0, 0).Add(new HealthComponent(500)).Add(new FightComponent(50, 15));
+
             // Each method gets its own RNG, so hopefully things are more segregated (less cascading changes)
             this.GenerateMap(new StandardGenerator(globalRandom.Next()));
             // TODO: more sophisticated.
-            PlayerX = this.width / 4;
-            PlayerY =  this.height / 4;
+            Player.X = this.width / 4;
+            Player.Y =  this.height / 4;
             this.GenerateMonsters(new StandardGenerator(globalRandom.Next()));
+
+            // Add everything to every system
+            foreach (var system in systems)
+            {
+                system.Add(this.Player);
+                foreach (var monster in this.Monsters)
+                {
+                    system.Add(monster);
+                }
+            }
+
+            EventBus.LatestInstance.Subscribe(Signal.EntityDied, (obj) => {
+                var entity = (Entity)obj;
+                if (Monsters.Contains(entity))
+                {
+                    this.Monsters.Remove(entity);
+                }
+                else if (entity == Player)
+                {
+                    throw new InvalidOperationException("GAME OVER!!");
+                }
+            });
         }
 
         public bool this[int x, int y]
@@ -49,15 +77,27 @@ namespace DeenGames.BioBot.Model
 
         public void TryToMovePlayer(int deltaX, int deltaY)
         {
-            var destinationX = PlayerX + deltaX;
-            var destinationY = PlayerY + deltaY;
+            var destinationX = Player.X + deltaX;
+            var destinationY = Player.Y + deltaY;
 
-            if (destinationX >= 0 && destinationX < this.width && destinationY >= 0 && destinationY < this.height &&
-                this.isWalkable[destinationX, destinationY] == true)
+            if (destinationX < 0 || destinationX >= this.width || destinationY < 0 || destinationY >= this.height ||
+                !this.isWalkable[destinationX, destinationY])
             {
-                this.PlayerX = destinationX;
-                this.PlayerY = destinationY;
+                return;
             }
+            else if (this.Monsters.Any(m => m.X == destinationX && m.Y == destinationY))
+            {
+                var target = this.Monsters.Single(m => m.X == destinationX && m.Y == destinationY);
+                target.Add(new DamageComponent(Player.Get<FightComponent>().Strength - target.Get<FightComponent>().Toughness));
+            }
+            else
+            {
+                // Clear, so move.
+                this.Player.X = destinationX;
+                this.Player.Y = destinationY;
+            }
+
+            // TODO: melee if thing here
         }
 
         private void GenerateMap(IGenerator random)
@@ -103,12 +143,12 @@ namespace DeenGames.BioBot.Model
             {
                 (var x, var y) = (random.Next(this.width), random.Next(this.height));
                 
-                while (!isWalkable[x, y] || Monsters.Any(m => m.X == x && m.Y == y) || (x == this.PlayerX && y == this.PlayerY))
+                while (!isWalkable[x, y] || Monsters.Any(m => m.X == x && m.Y == y) || (x == this.Player.X && y == this.Player.Y))
                 {
                     (x, y) = (random.Next(this.width), random.Next(this.height));
                 }
 
-                var monster = new Monster("Slime", x, y);
+                var monster = new Entity("Slime", x, y).Add(new HealthComponent(100)).Add(new FightComponent(25, 15));
                 this.Monsters.Add(monster);
             }
         }

@@ -1,5 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using DeenGames.BioBot.Ecs.Entities;
+using DeenGames.BioBot.Ecs.Systems;
+using DeenGames.BioBot.Events;
 using DeenGames.BioBot.Model;
 using DeenGames.BioBot.UI;
 using Puffin.Core;
@@ -13,6 +17,7 @@ namespace DeenGames.BioBot.Scenes
     {
         private readonly AreaMap map;
         private readonly TileMap entitiesMap;
+        private List<AbstractSystem> systems = new List<AbstractSystem>();
 
         public CoreGameScene()
         {
@@ -22,8 +27,13 @@ namespace DeenGames.BioBot.Scenes
             var gameSeed = new Random().Next();
             Console.WriteLine($"Global seed is {gameSeed}");
 
+            this.systems = new List<AbstractSystem>()
+            {
+                new DamageSystem(),
+            };
+
             // Testing, testing, 1 2 3 ...
-            this.map = new AreaMap(new StandardGenerator(gameSeed));
+            this.map = new AreaMap(new StandardGenerator(gameSeed), systems);
 
             // Create ground tilemap
             var groundMap = new TileMap(Constants.MAP_TILES_WIDE, Constants.MAP_TILES_HIGH, Path.Combine("Content", "Images", "Tileset.png"), Constants.TILE_WIDTH, Constants.TILE_HEIGHT);
@@ -73,9 +83,15 @@ namespace DeenGames.BioBot.Scenes
 
         override public void Update(int elapsedMilliseconds)
         {
+            // Apply all systems. This is probably overkill. Things happen on-move only.
+            foreach (var system in this.systems)
+            {
+                system.OnUpdate();
+            }
+
             // clear/redraw all entities, instead of tracking their old locations.
             this.entitiesMap.Clear();
-            this.entitiesMap.Set(map.PlayerX, map.PlayerY, "Player");
+            this.entitiesMap.Set(map.Player.X, map.Player.Y, "Player");
             foreach (var monster in this.map.Monsters)
             {
                 this.entitiesMap.Set(monster.X, monster.Y, monster.Name);
