@@ -26,8 +26,8 @@ namespace DeenGames.BioBot.Model
             // Each method gets its own RNG, so hopefully things are more segregated (less cascading changes)
             this.GenerateMap(new StandardGenerator(globalRandom.Next()));
             // TODO: more sophisticated
-            PlayerX = this.tilesWide / 2;
-            PlayerY =  this.tilesHigh / 2;
+            PlayerX = this.tilesWide / 4;
+            PlayerY =  this.tilesHigh / 4;
         }
 
         public bool this[int x, int y]
