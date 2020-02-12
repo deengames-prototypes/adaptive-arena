@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using DeenGames.BioBot.Model;
+using DeenGames.BioBot.UI;
 using Puffin.Core;
 using Puffin.Core.IO;
 using Puffin.Core.Tiles;
@@ -15,12 +16,14 @@ namespace DeenGames.BioBot.Scenes
 
         public CoreGameScene()
         {
+            this.BackgroundColour = Palette.DarkestBrown;
+
             // Probably shouldn't go here ...
             var gameSeed = new Random().Next();
             Console.WriteLine($"Global seed is {gameSeed}");
 
             // Testing, testing, 1 2 3 ...
-            this.map = new AreaMap(new StandardGenerator(gameSeed), Constants.MAP_TILES_WIDE, Constants.MAP_TILES_HIGH);
+            this.map = new AreaMap(new StandardGenerator(gameSeed));
 
             // Create ground tilemap
             var groundMap = new TileMap(Constants.MAP_TILES_WIDE, Constants.MAP_TILES_HIGH, Path.Combine("Content", "Images", "Tileset.png"), Constants.TILE_WIDTH, Constants.TILE_HEIGHT);
@@ -42,6 +45,7 @@ namespace DeenGames.BioBot.Scenes
             // Create entities tilemap
             this.entitiesMap = new TileMap(Constants.MAP_TILES_WIDE, Constants.MAP_TILES_HIGH, Path.Combine("Content", "Images", "Characters.png"), Constants.TILE_WIDTH, Constants.TILE_HEIGHT);
             this.entitiesMap.Define("Player", 0, 0);
+            this.entitiesMap.Define("Slime", 0, 1);
             this.Add(this.entitiesMap);
 
             this.OnActionPressed = (data) =>
@@ -72,6 +76,10 @@ namespace DeenGames.BioBot.Scenes
             // clear/redraw all entities, instead of tracking their old locations.
             this.entitiesMap.Clear();
             this.entitiesMap.Set(map.PlayerX, map.PlayerY, "Player");
+            foreach (var monster in this.map.Monsters)
+            {
+                this.entitiesMap.Set(monster.X, monster.Y, monster.Name);
+            }
         }
     }
 }
