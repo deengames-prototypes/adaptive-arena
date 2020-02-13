@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace DeenGames.BioBot.Ecs.Entities
 {
-    public class Entity
+    public class BioBotEntity
     {
         public int X { get; set; }
         public int Y { get; set; }
@@ -12,14 +12,14 @@ namespace DeenGames.BioBot.Ecs.Entities
 
         private readonly List<object> components = new List<object>();
 
-        public Entity(string name, int x, int y)
+        public BioBotEntity(string name, int x, int y)
         {
             this.Name = name;
             this.X = x;
             this.Y = y;
         }
 
-        public Entity Add(object component)
+        public BioBotEntity Add(object component)
         {
             this.components.Add(component);
             return this;

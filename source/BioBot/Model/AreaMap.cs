@@ -16,8 +16,8 @@ namespace DeenGames.BioBot.Model
     public class AreaMap
     {
         // TODO: refactor into player
-        internal List<Entity> Monsters = new List<Entity>();
-        internal readonly Entity Player;
+        internal List<BioBotEntity> Monsters = new List<BioBotEntity>();
+        internal readonly BioBotEntity Player;
 
         private const int currentDifficutly = 1000;
         private readonly ArrayMap<bool> isWalkable;
@@ -35,7 +35,7 @@ namespace DeenGames.BioBot.Model
             this.height = Constants.MAP_TILES_HIGH;
             this.isWalkable = new ArrayMap<bool>(Constants.MAP_TILES_WIDE, Constants.MAP_TILES_HIGH);
 
-            this.Player = new Entity("Player", 0, 0).Add(new HealthComponent(500)).Add(new FightComponent(50, 15));
+            this.Player = new BioBotEntity("Player", 0, 0).Add(new HealthComponent(500)).Add(new FightComponent(50, 15));
 
             // Each method gets its own RNG, so hopefully things are more segregated (less cascading changes)
             this.GenerateMap(new StandardGenerator(globalRandom.Next()));
@@ -55,7 +55,7 @@ namespace DeenGames.BioBot.Model
             }
 
             EventBus.LatestInstance.Subscribe(Signal.EntityDied, (obj) => {
-                var entity = (Entity)obj;
+                var entity = (BioBotEntity)obj;
                 if (Monsters.Contains(entity))
                 {
                     this.Monsters.Remove(entity);
@@ -147,7 +147,7 @@ namespace DeenGames.BioBot.Model
                     (x, y) = (random.Next(this.width), random.Next(this.height));
                 }
 
-                var monster = new Entity("Slime", x, y).Add(new HealthComponent(100)).Add(new FightComponent(25, 15));
+                var monster = new BioBotEntity("Slime", x, y).Add(new HealthComponent(100)).Add(new FightComponent(25, 15));
                 this.Monsters.Add(monster);
             }
         }

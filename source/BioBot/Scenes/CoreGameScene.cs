@@ -79,7 +79,7 @@ namespace DeenGames.BioBot.Scenes
             EventBus.LatestInstance.Subscribe(Signal.EntityHurt, (data) => this.UpdateStatusBar());
         }
 
-        override public void OnReady()
+        override public void Ready()
         {
             statusBar.Get<TextLabelComponent>().FontSize = 24;
         }

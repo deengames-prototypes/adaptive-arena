@@ -5,14 +5,14 @@ namespace DeenGames.BioBot.Ecs.Systems
 {
     public class AbstractSystem
     {
-        protected IList<Entity> entities = new List<Entity>();
+        protected IList<BioBotEntity> entities = new List<BioBotEntity>();
 
-        public void Add(Entity e)
+        public void Add(BioBotEntity e)
         {
             this.entities.Add(e);
         }
 
-        public void Remove(Entity e)
+        public void Remove(BioBotEntity e)
         {
             this.entities.Remove(e);
         }
