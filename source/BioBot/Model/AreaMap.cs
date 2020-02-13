@@ -21,7 +21,6 @@ namespace DeenGames.BioBot.Model
 
         private const int currentDifficutly = 1000;
         private readonly ArrayMap<bool> isWalkable;
-        private readonly int areaNumber = 1; // "floor" number
         private readonly IGenerator globalRandom;
         
         // In TILES

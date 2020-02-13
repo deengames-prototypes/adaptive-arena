@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using DeenGames.BioBot.Ecs.Entities;
+using System.Linq;
+using DeenGames.BioBot.Ecs.Components;
 using DeenGames.BioBot.Ecs.Systems;
 using DeenGames.BioBot.Events;
 using DeenGames.BioBot.Model;
 using DeenGames.BioBot.UI;
 using Puffin.Core;
+using Puffin.Core.Ecs;
+using Puffin.Core.Ecs.Components;
 using Puffin.Core.IO;
 using Puffin.Core.Tiles;
 using Troschuetz.Random.Generators;
@@ -18,6 +21,7 @@ namespace DeenGames.BioBot.Scenes
         private readonly AreaMap map;
         private readonly TileMap entitiesMap;
         private List<AbstractSystem> systems = new List<AbstractSystem>();
+        private Puffin.Core.Ecs.Entity statusBar;
 
         public CoreGameScene()
         {
@@ -58,27 +62,64 @@ namespace DeenGames.BioBot.Scenes
             this.entitiesMap.Define("Slime", 0, 1);
             this.Add(this.entitiesMap);
 
-            this.OnActionPressed = (data) =>
-            {
-                var action = (PuffinAction)data;
+            var playerHealth = map.Player.Get<HealthComponent>();
 
-                if (action == PuffinAction.Up)
-                {
-                    map.TryToMovePlayer(0, -1);
-                }
-                else if (action == PuffinAction.Down)
-                {
-                    map.TryToMovePlayer(0, 1);
-                }
-                else if (action == PuffinAction.Left)
-                {
-                    map.TryToMovePlayer(-1, 0);
-                }
-                else if (action == PuffinAction.Right)
-                {
-                    map.TryToMovePlayer(1, 0);
-                }
-            };
+            this.statusBar = new Puffin.Core.Ecs.Entity().Move(0, Constants.DISPLAY_TILES_HIGH * Constants.TILE_HEIGHT)
+                .Colour(Palette.Black, Constants.DISPLAY_TILES_WIDE * Constants.TILE_WIDTH, Constants.STATUS_BAR_HEIGHT)
+                .Label("");
+
+            this.Add(this.statusBar);
+
+            this.UpdateStatusBar();
+
+            // Event handlers for things
+            this.OnActionPressed = this.ProcessPlayerInput;
+            // Update status bar when something gets hurt
+            EventBus.LatestInstance.Subscribe(Signal.EntityDied, (data) => this.UpdateStatusBar());
+            EventBus.LatestInstance.Subscribe(Signal.EntityHurt, (data) => this.UpdateStatusBar());
+        }
+
+        override public void OnReady()
+        {
+            statusBar.Get<TextLabelComponent>().FontSize = 24;
+        }
+
+        private void ProcessPlayerInput(object data)
+        {
+            var action = (PuffinAction)data;
+
+            if (action == PuffinAction.Up)
+            {
+                map.TryToMovePlayer(0, -1);
+            }
+            else if (action == PuffinAction.Down)
+            {
+                map.TryToMovePlayer(0, 1);
+            }
+            else if (action == PuffinAction.Left)
+            {
+                map.TryToMovePlayer(-1, 0);
+            }
+            else if (action == PuffinAction.Right)
+            {
+                map.TryToMovePlayer(1, 0);
+            }
+            
+            this.UpdateStatusBar();
+        }
+
+        private void UpdateStatusBar()
+        {
+            var label = this.statusBar.Get<TextLabelComponent>();
+            var playerHealth = map.Player.Get<HealthComponent>();
+            label.Text = $"HP: {playerHealth.CurrentHealth}/{playerHealth.TotalHealth}\n";
+
+            var adjacents = map.Monsters.Where(m => GoRogue.Distance.EUCLIDEAN.Calculate(map.Player.X, map.Player.Y, m.X, m.Y) <= 1);
+            foreach (var m in adjacents)
+            {
+                var health = m.Get<HealthComponent>();
+                label.Text += $"{m.Name.ToLower()[0]}: {health.CurrentHealth}/{health.TotalHealth} ";
+            }
         }
 
         override public void Update(int elapsedMilliseconds)
