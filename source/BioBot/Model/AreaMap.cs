@@ -22,12 +22,10 @@ namespace DeenGames.BioBot.Model
         private const int currentDifficutly = 1000;
         private readonly ArrayMap<bool> isWalkable;
         private readonly IGenerator globalRandom;
-        
         // In TILES
         private readonly int width = 0;
         private readonly int height = 0;
         
-
         public AreaMap(IGenerator globalRandom)
         {
             this.globalRandom = globalRandom;
@@ -44,15 +42,12 @@ namespace DeenGames.BioBot.Model
             Player.Y =  this.height / 4;
             this.GenerateMonsters(new StandardGenerator(globalRandom.Next()));
 
-            EventBus.LatestInstance.Subscribe(Signal.EntityDied, (obj) => {
+            EventBus.LatestInstance.Subscribe(Signal.EntityDied, (obj) =>
+            {
                 var entity = (BioBotEntity)obj;
                 if (Monsters.Contains(entity))
                 {
                     this.Monsters.Remove(entity);
-                }
-                else if (entity == Player)
-                {
-                    throw new InvalidOperationException("GAME OVER!!");
                 }
             });
         }
@@ -143,7 +138,7 @@ namespace DeenGames.BioBot.Model
                 var monster = new BioBotEntity("Slime", x, y)
                     .Add(new HealthComponent(100))
                     .Add(new FightComponent(25, 15))
-                    .Add(new MovementBehaviourComponent(5, IdleBehaviour.NaiveStalk, SeenPlayerBehaviour.NaivelyStalk));
+                    .Add(new MovementBehaviourComponent(5, IdleBehaviour.NaiveStalk, SeenPlayerBehaviour.NaiveStalk));
 
                 this.Monsters.Add(monster);
             }

@@ -23,6 +23,7 @@ namespace DeenGames.BioBot.Scenes
         private readonly TileMap entitiesMap;
         private List<AbstractSystem> systems = new List<AbstractSystem>();
         private Puffin.Core.Ecs.Entity statusBar;
+        private bool gameOver = false;
 
         public CoreGameScene()
         {
@@ -88,6 +89,14 @@ namespace DeenGames.BioBot.Scenes
             // Update status bar when something gets hurt
             EventBus.LatestInstance.Subscribe(Signal.EntityDied, (data) => this.UpdateStatusBar());
             EventBus.LatestInstance.Subscribe(Signal.EntityHurt, (data) => this.UpdateStatusBar());
+            EventBus.LatestInstance.Subscribe(Signal.EntityDied, (obj) =>
+            {
+                if (obj == this.map.Player)
+                {
+                    this.statusBar.Get<TextLabelComponent>().Text = "Your biobot crumbles ...";
+                    this.gameOver = true;
+                }
+            });
         }
 
         override public void Ready()
@@ -97,6 +106,11 @@ namespace DeenGames.BioBot.Scenes
 
         private void ProcessPlayerInput(object data)
         {
+            if (this.gameOver)
+            {
+                return;
+            }
+
             var action = (PuffinAction)data;
             var moved = false;
 
