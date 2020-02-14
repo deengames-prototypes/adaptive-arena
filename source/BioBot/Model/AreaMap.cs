@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using DeenGames.BioBot.Ecs.Components;
 using DeenGames.BioBot.Ecs.Entities;
-using DeenGames.BioBot.Ecs.Systems;
 using DeenGames.BioBot.Events;
 using GoRogue.MapGeneration;
 using GoRogue.MapViews;
+using Puffin.Core.Events;
 using Troschuetz.Random;
 using Troschuetz.Random.Generators;
 
@@ -28,7 +28,7 @@ namespace DeenGames.BioBot.Model
         private readonly int height = 0;
         
 
-        public AreaMap(IGenerator globalRandom, IEnumerable<AbstractSystem> systems)
+        public AreaMap(IGenerator globalRandom)
         {
             this.globalRandom = globalRandom;
             this.width = Constants.MAP_TILES_WIDE;
@@ -43,16 +43,6 @@ namespace DeenGames.BioBot.Model
             Player.X = this.width / 4;
             Player.Y =  this.height / 4;
             this.GenerateMonsters(new StandardGenerator(globalRandom.Next()));
-
-            // Add everything to every system
-            foreach (var system in systems)
-            {
-                system.Add(this.Player);
-                foreach (var monster in this.Monsters)
-                {
-                    system.Add(monster);
-                }
-            }
 
             EventBus.LatestInstance.Subscribe(Signal.EntityDied, (obj) => {
                 var entity = (BioBotEntity)obj;
@@ -74,10 +64,10 @@ namespace DeenGames.BioBot.Model
             }
         }
 
-        public void TryToMovePlayer(int deltaX, int deltaY)
+        public void TryToMove(BioBotEntity entity, int deltaX, int deltaY)
         {
-            var destinationX = Player.X + deltaX;
-            var destinationY = Player.Y + deltaY;
+            var destinationX = entity.X + deltaX;
+            var destinationY = entity.Y + deltaY;
 
             if (destinationX < 0 || destinationX >= this.width || destinationY < 0 || destinationY >= this.height ||
                 !this.isWalkable[destinationX, destinationY])
@@ -86,17 +76,20 @@ namespace DeenGames.BioBot.Model
             }
             else if (this.Monsters.Any(m => m.X == destinationX && m.Y == destinationY))
             {
+                // NB: monsters will fight each other to get to you :/
                 var target = this.Monsters.Single(m => m.X == destinationX && m.Y == destinationY);
-                target.Add(new DamageComponent(Player.Get<FightComponent>().Strength - target.Get<FightComponent>().Toughness));
+                target.Add(new DamageComponent(entity.Get<FightComponent>().Strength - target.Get<FightComponent>().Toughness));
+            }
+            else if (this.Player.X == destinationX && this.Player.Y == destinationY)
+            {
+                Player.Add(new DamageComponent(entity.Get<FightComponent>().Strength - Player.Get<FightComponent>().Toughness));
             }
             else
             {
                 // Clear, so move.
-                this.Player.X = destinationX;
-                this.Player.Y = destinationY;
+                entity.X = destinationX;
+                entity.Y = destinationY;
             }
-
-            // TODO: melee if thing here
         }
 
         private void GenerateMap(IGenerator random)
@@ -147,7 +140,11 @@ namespace DeenGames.BioBot.Model
                     (x, y) = (random.Next(this.width), random.Next(this.height));
                 }
 
-                var monster = new BioBotEntity("Slime", x, y).Add(new HealthComponent(100)).Add(new FightComponent(25, 15));
+                var monster = new BioBotEntity("Slime", x, y)
+                    .Add(new HealthComponent(100))
+                    .Add(new FightComponent(25, 15))
+                    .Add(new MovementBehaviourComponent(5, IdleBehaviour.DoNothing, SeenPlayerBehaviour.NaiveWalk));
+
                 this.Monsters.Add(monster);
             }
         }

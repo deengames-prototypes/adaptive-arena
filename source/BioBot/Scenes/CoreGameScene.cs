@@ -10,6 +10,7 @@ using DeenGames.BioBot.UI;
 using Puffin.Core;
 using Puffin.Core.Ecs;
 using Puffin.Core.Ecs.Components;
+using Puffin.Core.Events;
 using Puffin.Core.IO;
 using Puffin.Core.Tiles;
 using Troschuetz.Random.Generators;
@@ -31,13 +32,23 @@ namespace DeenGames.BioBot.Scenes
             var gameSeed = new Random().Next();
             Console.WriteLine($"Global seed is {gameSeed}");
 
+            this.map = new AreaMap(new StandardGenerator(gameSeed));
+
             this.systems = new List<AbstractSystem>()
             {
                 new DamageSystem(),
+                new MovementBehaviourSystem(this.map),
             };
 
-            // Testing, testing, 1 2 3 ...
-            this.map = new AreaMap(new StandardGenerator(gameSeed), systems);
+            // Add everything to every system
+            foreach (var system in systems)
+            {
+                system.Add(map.Player);
+                foreach (var monster in map.Monsters)
+                {
+                    system.Add(monster);
+                }
+            }
 
             // Create ground tilemap
             var groundMap = new TileMap(Constants.MAP_TILES_WIDE, Constants.MAP_TILES_HIGH, Path.Combine("Content", "Images", "Tileset.png"), Constants.TILE_WIDTH, Constants.TILE_HEIGHT);
@@ -87,22 +98,32 @@ namespace DeenGames.BioBot.Scenes
         private void ProcessPlayerInput(object data)
         {
             var action = (PuffinAction)data;
+            var moved = false;
 
             if (action == PuffinAction.Up)
             {
-                map.TryToMovePlayer(0, -1);
+                map.TryToMove(map.Player, 0, -1);
+                moved = true;
             }
             else if (action == PuffinAction.Down)
             {
-                map.TryToMovePlayer(0, 1);
+                map.TryToMove(map.Player, 0, 1);
+                moved = true;
             }
             else if (action == PuffinAction.Left)
             {
-                map.TryToMovePlayer(-1, 0);
+                map.TryToMove(map.Player, -1, 0);
+                moved = true;
             }
             else if (action == PuffinAction.Right)
             {
-                map.TryToMovePlayer(1, 0);
+                map.TryToMove(map.Player, 1, 0);
+                moved = true;
+            }
+
+            if (moved)
+            {
+                EventBus.LatestInstance.Broadcast(Signal.PlayerMoved);
             }
             
             this.UpdateStatusBar();

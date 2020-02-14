@@ -7,7 +7,7 @@ namespace DeenGames.BioBot.Ecs.Systems
     {
         protected IList<BioBotEntity> entities = new List<BioBotEntity>();
 
-        public void Add(BioBotEntity e)
+        public virtual void Add(BioBotEntity e)
         {
             this.entities.Add(e);
         }

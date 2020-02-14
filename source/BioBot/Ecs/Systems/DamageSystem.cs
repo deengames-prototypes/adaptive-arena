@@ -1,6 +1,7 @@
 using System;
 using DeenGames.BioBot.Ecs.Components;
 using DeenGames.BioBot.Events;
+using Puffin.Core.Events;
 
 namespace DeenGames.BioBot.Ecs.Systems
 {

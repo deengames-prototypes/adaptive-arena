@@ -4,5 +4,6 @@ namespace DeenGames.BioBot.Events
     {
         EntityHurt,
         EntityDied,
+        PlayerMoved,
     }
 }
