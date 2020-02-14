@@ -17,17 +17,14 @@ namespace DeenGames.BioBot.Ecs.Components
     public enum IdleBehaviour
     {
         DoNothing,
-        // Walk around randomly, all the time.
-        RandomWalk,
-        // Relentlessly stalk the player
-        Stalk,
+        RandomWalk, // Walk around randomly, all the time.
+        NaiveStalk, // Walk toward the player, but not intelligently
+        Pathfind, // Relentlessly stalk the player, with pathfinding
     }
 
     public enum SeenPlayerBehaviour
     {
-        // Randomly walk X/Y toward player
-        NaiveWalk,
-        // Use path-finding
-        Pathfind,
+        NaiveStalk, // Randomly walk X/Y toward player
+        Pathfind, // Use path-finding
     }
 }

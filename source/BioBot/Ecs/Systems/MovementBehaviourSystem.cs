@@ -38,7 +38,7 @@ namespace DeenGames.BioBot.Ecs.Systems
                     // Apply seen behaviour
                     switch (behaviour.SeenPlayerBehaviour)
                     {
-                        case SeenPlayerBehaviour.NaiveWalk:
+                        case SeenPlayerBehaviour.NaiveStalk:
                             this.NaivelyMoveTowardsPlayer(entity);
                             break;
                         case SeenPlayerBehaviour.Pathfind:
@@ -56,9 +56,12 @@ namespace DeenGames.BioBot.Ecs.Systems
                         case IdleBehaviour.DoNothing:
                             break;
                         case IdleBehaviour.RandomWalk:
+                            this.RandomWalk(entity);
+                            break;
+                        case IdleBehaviour.NaiveStalk:
                             this.NaivelyMoveTowardsPlayer(entity);
                             break;
-                        case IdleBehaviour.Stalk:
+                        case IdleBehaviour.Pathfind:
                             this.PathFindTowardsPlayer(entity);
                             break;
                         default:
@@ -91,6 +94,21 @@ namespace DeenGames.BioBot.Ecs.Systems
                 {
                     areaMap.TryToMove(entity, 0, Math.Sign(dy));
                 }
+            }
+        }
+
+        private void RandomWalk(BioBotEntity entity)
+        {
+            // Actually random, doesn't matter if that tile is walkable or not. Meaning, sometimes do nothing. :shrug:
+            var dx = random.NextDouble() < 0.5 ? -1 : 1;
+            var dy = random.NextDouble() < 0.5 ? -1 : 1;
+            if (random.NextDouble() < 0.5)
+            {
+                areaMap.TryToMove(entity, Math.Sign(dx), 0);
+            }
+            else
+            {
+                areaMap.TryToMove(entity, 0, Math.Sign(dy));
             }
         }
 

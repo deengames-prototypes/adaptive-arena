@@ -143,7 +143,7 @@ namespace DeenGames.BioBot.Model
                 var monster = new BioBotEntity("Slime", x, y)
                     .Add(new HealthComponent(100))
                     .Add(new FightComponent(25, 15))
-                    .Add(new MovementBehaviourComponent(5, IdleBehaviour.DoNothing, SeenPlayerBehaviour.NaiveWalk));
+                    .Add(new MovementBehaviourComponent(5, IdleBehaviour.NaiveStalk, SeenPlayerBehaviour.NaivelyStalk));
 
                 this.Monsters.Add(monster);
             }
