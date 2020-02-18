@@ -25,6 +25,9 @@ namespace DeenGames.BioBot.Scenes
         private Puffin.Core.Ecs.Entity statusBar;
         private bool gameOver = false;
 
+        // No player needed because we set tilemaps. So just update the camera independently.
+        private Entity camera;
+
         public CoreGameScene()
         {
             this.BackgroundColour = Palette.DarkestBrown;
@@ -33,6 +36,7 @@ namespace DeenGames.BioBot.Scenes
             var gameSeed = new Random().Next();
             Console.WriteLine($"Global seed is {gameSeed}");
 
+            // BB model: entities and systems
             this.map = new AreaMap(new StandardGenerator(gameSeed));
 
             this.systems = new List<AbstractSystem>()
@@ -51,6 +55,7 @@ namespace DeenGames.BioBot.Scenes
                 }
             }
 
+            // ModelView: Puffin
             // Create ground tilemap
             var groundMap = new TileMap(Constants.MAP_TILES_WIDE, Constants.MAP_TILES_HIGH, Path.Combine("Content", "Images", "Tileset.png"), Constants.TILE_WIDTH, Constants.TILE_HEIGHT);
 
@@ -76,8 +81,8 @@ namespace DeenGames.BioBot.Scenes
 
             var playerHealth = map.Player.Get<HealthComponent>();
 
-            this.statusBar = new Puffin.Core.Ecs.Entity().Move(0, Constants.DISPLAY_TILES_HIGH * Constants.TILE_HEIGHT)
-                .Colour(Palette.Black, Constants.DISPLAY_TILES_WIDE * Constants.TILE_WIDTH, Constants.STATUS_BAR_HEIGHT)
+            this.statusBar = new Puffin.Core.Ecs.Entity(true).Move(0, Constants.DISPLAY_TILES_HIGH * Constants.TILE_HEIGHT * Constants.GAME_ZOOM)
+                .Colour(Palette.Black, Constants.DISPLAY_TILES_WIDE * Constants.TILE_WIDTH * Constants.GAME_ZOOM, Constants.STATUS_BAR_HEIGHT * Constants.GAME_ZOOM)
                 .Label("");
 
             this.Add(this.statusBar);
@@ -97,6 +102,9 @@ namespace DeenGames.BioBot.Scenes
                     this.gameOver = true;
                 }
             });
+
+            this.camera = new Entity().Camera(Constants.GAME_ZOOM);
+            this.Add(this.camera);
         }
 
         override public void Ready()
@@ -145,6 +153,7 @@ namespace DeenGames.BioBot.Scenes
 
         private void UpdateStatusBar()
         {
+            // TODO: figure out how to do UI / things that don't move/scale with the camera
             var label = this.statusBar.Get<TextLabelComponent>();
             var playerHealth = map.Player.Get<HealthComponent>();
             label.Text = $"HP: {playerHealth.CurrentHealth}/{playerHealth.TotalHealth}\n";

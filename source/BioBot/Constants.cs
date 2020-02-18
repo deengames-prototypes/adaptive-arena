@@ -14,5 +14,7 @@ namespace DeenGames.BioBot
 
         internal const int TILE_WIDTH = 8;
         internal const int TILE_HEIGHT = 16;
+
+        internal const int GAME_ZOOM = 1;
     }
 }
